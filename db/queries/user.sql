@@ -1,7 +1,7 @@
 -- name: CreateUser :one
-INSERT INTO users (id, username, email, hashed_password)
-VALUES ($1, $2, $3, $4)
-RETURNING id, username, email, created_at, updated_at;
+INSERT INTO users (id, username, email, hashed_password, pfp_url)
+VALUES ($1, $2, $3, $4, $5)
+RETURNING id, username, email, pfp_url, created_at, updated_at;
 
 -- name: GetUserByEmail :one
 SELECT * FROM users WHERE email = $1;

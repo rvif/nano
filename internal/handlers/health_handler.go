@@ -8,6 +8,13 @@ import (
 )
 
 func HealthCheckHandler(c *gin.Context) {
+	dbConn := db.GetDB()
+
+	if dbConn == nil {
+		c.JSON(http.StatusServiceUnavailable, gin.H{"status": "Database connection not initialized yet"})
+		return
+	}
+
 	if err := db.GetDB().Ping(); err != nil {
 		c.JSON(http.StatusServiceUnavailable, gin.H{"status": "Database not reachable at the moment", "error": err.Error()})
 		return

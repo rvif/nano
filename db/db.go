@@ -15,11 +15,12 @@ func InitDB() {
 	cfg := config.LoadConfig()
 
 	// Connect to the database
-	DB, err := sql.Open("postgres", cfg.DB_URL)
+	var err error
+	DB, err = sql.Open("postgres", cfg.DB_URL)
 	if err != nil {
 		log.Fatalf("ERROR connecting to database: %v", err)
 	}
-	defer DB.Close()
+	// defer DB.Close()
 	fmt.Println("Successfully connected to database")
 
 	// Ping the database

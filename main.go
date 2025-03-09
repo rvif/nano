@@ -25,6 +25,7 @@ func main() {
 	// Start the server
 	fmt.Println("Server starting on port: ", cfg.Port)
 	router := gin.Default()
+	router.Static("/images", "./public/images")
 
 	v1Router := router.Group("/api/v1")
 	{
