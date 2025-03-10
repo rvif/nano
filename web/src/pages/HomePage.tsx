@@ -72,7 +72,7 @@ const HomePage = () => {
       <Box className="h-[calc(100vh-110px)] xl:flex-1/2 md:!my-4 !my-0 ">
         <Flex align="center" justify="center" className="h-full xl:pb-0">
           <img
-            src="/hero.webp"
+            src="/placeholder_hero.webp"
             alt="Nano Dashboard"
             className="w-full max-w-[450px] md:max-w-xl xl:max-w-2xl rounded-2xl transition-shadow duration-300"
             style={{ boxShadow: "var(--shadow-4)" }}
