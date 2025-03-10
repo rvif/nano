@@ -1,5 +1,5 @@
 // React imports
-import React, { Suspense, useEffect, useState } from "react";
+import React, { Suspense, useEffect, useRef, useState } from "react";
 
 // Themes and styles
 import "@radix-ui/themes/styles.css";
@@ -55,18 +55,35 @@ const RedirectingPage = React.lazy(
 );
 const SlugValidator = React.lazy(() => import("./pages/utility/SlugValidator"));
 
-// Navigation loader component to create loading states during client transitions
+// Navigation loader component -> to create loading states during client transitions
 const NavigationLoader = ({ children }: { children: React.ReactNode }) => {
   const location = useLocation();
   const [isLoading, setIsLoading] = useState(false);
+  const navigationCompleteRef = useRef(false);
 
   useEffect(() => {
+    // Start loading when location changes
     setIsLoading(true);
-    const timer = setTimeout(() => {
-      setIsLoading(false);
-    }, 300);
+    navigationCompleteRef.current = false;
 
-    return () => clearTimeout(timer);
+    // This will run after the rendering is complete
+    const checkIfContentReady = () => {
+      // Use requestAnimationFrame to check after browser has painted
+      requestAnimationFrame(() => {
+        if (!navigationCompleteRef.current) {
+          navigationCompleteRef.current = true;
+          setIsLoading(false);
+        }
+      });
+    };
+
+    // Add a small delay to allow React to render the new route
+    const timer = setTimeout(checkIfContentReady, 10);
+
+    return () => {
+      clearTimeout(timer);
+      navigationCompleteRef.current = true;
+    };
   }, [location.pathname]);
 
   if (isLoading) {
