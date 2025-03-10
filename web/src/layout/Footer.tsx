@@ -33,7 +33,7 @@ const Footer = () => {
                 color="iris"
                 onClick={() => navigate("/health")}
               >
-                <HeartFilledIcon />
+                <HeartFilledIcon width={18} height={18} />
               </Button>
             </Tooltip>
           </Flex>
