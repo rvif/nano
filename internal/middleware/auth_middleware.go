@@ -20,6 +20,7 @@ func AuthMiddleware() gin.HandlerFunc {
 		tokenStr := c.GetHeader("Authorization")
 		if tokenStr == "" {
 			redirectTo := c.Request.URL.Path
+			// TODO: integrate with frontend next?= query parameter
 			next := c.DefaultQuery("next", "")
 			if next != "" {
 				redirectTo = next

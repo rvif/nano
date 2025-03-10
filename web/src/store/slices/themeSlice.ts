@@ -1,6 +1,8 @@
-import { createSlice, PayloadAction } from "@reduxjs/toolkit";
+import { createSlice } from "@reduxjs/toolkit";
 
 type AppearanceType = "light" | "dark";
+
+const prefersDarkMode = localStorage.getItem("prefersDarkMode") == "true";
 
 interface ThemeState {
   appearance: AppearanceType;
@@ -11,7 +13,7 @@ interface ThemeState {
   scaling: string;
 }
 const initialState: ThemeState = {
-  appearance: "light",
+  appearance: prefersDarkMode ? "dark" : "light",
   accentColor: "iris",
   grayColor: "slate",
   panelBackground: "solid",
@@ -25,6 +27,10 @@ export const themeSlice = createSlice({
   reducers: {
     toggleAppearance: (state) => {
       state.appearance = state.appearance === "light" ? "dark" : "light";
+      localStorage.setItem(
+        "prefersDarkMode",
+        state.appearance === "dark" ? "true" : "false"
+      );
     },
   },
 });

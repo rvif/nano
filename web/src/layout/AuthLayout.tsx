@@ -1,10 +1,10 @@
 // Logic ✅
 
 import Navbar from "./Navbar";
-import Footer from "./Footer";
 import { Outlet } from "react-router-dom";
+import Footer from "./Footer";
 
-const Layout = () => {
+const AuthLayout = () => {
   return (
     <div className="flex flex-col min-h-screen overflow-hidden">
       <Navbar />
@@ -19,4 +19,4 @@ const Layout = () => {
   );
 };
 
-export default Layout;
+export default AuthLayout;

@@ -4,4 +4,7 @@
 # User uploads
 /public/images/*
 !/public/images/default_pfp.jpg
-!/public/images/.gitkeep
+
+# dis is a file with no content (maybe except one), just to keep the folder structure in the repo
+!/public/images/.gitkeep  
+
