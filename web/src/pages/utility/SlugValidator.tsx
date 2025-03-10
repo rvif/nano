@@ -1,9 +1,10 @@
 //! Test component for future logic to validate short URL slugs present in DB
 
 import { useEffect, useState } from "react";
-import { Navigate, useParams } from "react-router-dom";
+import { useParams } from "react-router-dom";
+import NotFoundPage from "./NotFoundPage";
 
-const slugValidator = () => {
+const SlugValidator = () => {
   const { slug } = useParams<{ slug: string }>();
   const [shortURL, setShortURL] = useState("");
   const [fetching, setFetching] = useState(true);
@@ -25,13 +26,13 @@ const slugValidator = () => {
   }, [slug]);
 
   if (fetching) {
-    // console.log("fetching data");
     return <div>Loading... </div>;
   }
   if (!shortURL) {
-    return <Navigate to="not-found" replace />;
+    // Instead of redirecting, render the NotFoundPage directly
+    return <NotFoundPage />;
   }
   return <div>Found short URL: {shortURL}</div>;
 };
 
-export default slugValidator;
+export default SlugValidator;

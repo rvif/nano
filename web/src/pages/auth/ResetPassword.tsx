@@ -13,12 +13,7 @@ import {
   TextField,
 } from "@radix-ui/themes";
 import { useEffect, useState } from "react";
-import {
-  ArrowLeftIcon,
-  CheckCircledIcon,
-  EyeOpenIcon,
-  EyeClosedIcon,
-} from "@radix-ui/react-icons";
+import { ArrowLeftIcon, CheckCircledIcon } from "@radix-ui/react-icons";
 import axios from "axios";
 import { useLocation, useNavigate } from "react-router-dom";
 import api from "../../utils/api";
@@ -39,8 +34,6 @@ const ResetPassword = () => {
   const [countdownIntervalId, setCountdownIntervalId] = useState<number | null>(
     null
   );
-  const [showPassword, setShowPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   useEffect(() => {
     const searchParams = new URLSearchParams(location.search);

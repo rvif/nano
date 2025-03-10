@@ -27,6 +27,7 @@ import ProfilePage from "./pages/ProfilePage";
 import HealthCheckPage from "./pages/utility/HealthCheckPage";
 import TokenRefresher from "./components/TokenRefresher";
 import ForgotPassword from "./pages/auth/ForgotPassword";
+import PublicOnlyRoute from "./pages/utility/PublicOnlyRoute";
 
 const LoadingSpinner = () => {
   return (
@@ -165,7 +166,19 @@ function App() {
 
               {/* Public routes */}
               <Route
-                path="/:slug"
+                path="health"
+                element={
+                  <Suspense fallback={<LoadingSpinner />}>
+                    <NavigationLoader>
+                      <HealthCheckPage />
+                    </NavigationLoader>
+                  </Suspense>
+                }
+              />
+
+              {/* Slug route must come after specific routes but before the catch-all */}
+              <Route
+                path=":slug"
                 element={
                   <Suspense fallback={<LoadingSpinner />}>
                     <NavigationLoader>
@@ -175,24 +188,12 @@ function App() {
                 }
               />
 
+              {/* Main layout catch-all */}
               <Route
-                path="not-found"
+                path="*"
                 element={
                   <Suspense fallback={<LoadingSpinner />}>
-                    <NavigationLoader>
-                      <NotFoundPage />
-                    </NavigationLoader>
-                  </Suspense>
-                }
-              />
-
-              <Route
-                path="health"
-                element={
-                  <Suspense fallback={<LoadingSpinner />}>
-                    <NavigationLoader>
-                      <HealthCheckPage />
-                    </NavigationLoader>
+                    <NotFoundPage />
                   </Suspense>
                 }
               />
@@ -205,9 +206,7 @@ function App() {
                 index
                 element={
                   <Suspense fallback={<LoadingSpinner />}>
-                    <NavigationLoader>
-                      <NotFoundPage />
-                    </NavigationLoader>
+                    <NotFoundPage />
                   </Suspense>
                 }
               />
@@ -216,7 +215,9 @@ function App() {
                 element={
                   <Suspense fallback={<LoadingSpinner />}>
                     <NavigationLoader>
-                      <LoginPage />
+                      <PublicOnlyRoute>
+                        <LoginPage />
+                      </PublicOnlyRoute>
                     </NavigationLoader>
                   </Suspense>
                 }
@@ -226,7 +227,9 @@ function App() {
                 element={
                   <Suspense fallback={<LoadingSpinner />}>
                     <NavigationLoader>
-                      <SignupPage />
+                      <PublicOnlyRoute>
+                        <SignupPage />
+                      </PublicOnlyRoute>
                     </NavigationLoader>
                   </Suspense>
                 }
@@ -236,7 +239,9 @@ function App() {
                 element={
                   <Suspense fallback={<LoadingSpinner />}>
                     <NavigationLoader>
-                      <ForgotPassword />
+                      <PublicOnlyRoute>
+                        <ForgotPassword />
+                      </PublicOnlyRoute>
                     </NavigationLoader>
                   </Suspense>
                 }
@@ -247,14 +252,24 @@ function App() {
                 element={
                   <Suspense fallback={<LoadingSpinner />}>
                     <NavigationLoader>
-                      <ResetPassword />
+                      <PublicOnlyRoute>
+                        <ResetPassword />
+                      </PublicOnlyRoute>
                     </NavigationLoader>
                   </Suspense>
                 }
               />
-            </Route>
 
-            <Route path="*" element={<Navigate to="/not-found" replace />} />
+              {/* Auth layout catch-all */}
+              <Route
+                path="*"
+                element={
+                  <Suspense fallback={<LoadingSpinner />}>
+                    <NotFoundPage />
+                  </Suspense>
+                }
+              />
+            </Route>
           </Routes>
         </BrowserRouter>
         {/* <ThemePanel /> */}
