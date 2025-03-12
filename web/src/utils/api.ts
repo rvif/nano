@@ -7,6 +7,8 @@ import { checkTokenExpiration, refreshAccessToken } from "./tokenRefresh";
 
 const api = axios.create({
   baseURL: import.meta.env.PROD ? "/api/v1" : "http://localhost:8080/api/v1",
+  timeout: 10000,
+  maxRedirects: 0, // Don't follow redirects automatically
   headers: {
     "Content-Type": "application/json",
   },

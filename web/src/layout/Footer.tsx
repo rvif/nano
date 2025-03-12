@@ -1,5 +1,3 @@
-// Desktop view ✅
-
 import {
   Box,
   Em,
@@ -18,10 +16,15 @@ const Footer = () => {
   const navigate = useNavigate();
 
   return (
-    <Box className="h-[64px]">
+    <Box className="lg:h-[64px] h-auto py-4">
       <Separator orientation="horizontal" size="4" />
-      <Flex align="center" className="h-full" justify="between">
-        <Box pl="6">
+      <Flex
+        direction={{ initial: "column", md: "row" }}
+        align="center"
+        justify="between"
+        className="h-full px-4 md:px-6 text-center md:text-left"
+      >
+        <Box className="!my-1 lg:mb-0 !pl-6">
           <Flex gap="2" align="center">
             <Text color="iris" weight="medium" highContrast>
               © nano, Inc.
@@ -38,9 +41,7 @@ const Footer = () => {
             </Tooltip>
           </Flex>
         </Box>
-
-        {/* made w/ love*/}
-        <Box pr="6">
+        <Box className="!pr-6">
           <Flex align="center" direction="column">
             <Text color="iris" highContrast size="3" weight="light">
               <Quote>nano fast, nano simple</Quote> 💞{" "}

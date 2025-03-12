@@ -58,7 +58,18 @@ func main() {
 		protected.GET("/me", handlers.MeHandler)
 
 		// TODO: add url shortener routes on protected group
+		url := protected.Group("/url")
+		{
+			// URLs -> shortURLs
+			url.POST("/shorten", handlers.CreateURLHandler)
+			// url.GET("/my-links", handlers.GetURLsByUserIDHandler)
+			// url.PATCH("/update/:short_url", handlers.UpdateShortURLHandler)
+			// url.DELETE("/delete/:short_url", handlers.DeleteURLHandler)
+			// url.GET("/analytics/:short_url", handlers.GetURLAnalyticsHandler)
 
+		}
+
+		v1Router.GET("/url/:slug", handlers.RedirectToURLHandler)
 		v1Router.GET("/health", handlers.HealthCheckHandler)
 		v1Router.GET("/", func(c *gin.Context) {
 			c.JSON(200, gin.H{"message": "Welcome to nano-url"})

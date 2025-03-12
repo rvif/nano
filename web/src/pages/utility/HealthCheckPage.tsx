@@ -125,7 +125,7 @@ const HealthCheckPage = () => {
         justify="center"
         direction="column"
         gap="3"
-        className="w-[600px] h-full"
+        className="w-[650px] h-full"
       >
         {loading ? (
           <Flex align="center" justify="center" py="9" className="w-full">

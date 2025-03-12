@@ -27,6 +27,18 @@ type RefreshToken struct {
 	CreatedAt sql.NullTime
 }
 
+type Url struct {
+	ID          uuid.UUID
+	UserID      uuid.UUID
+	Url         string
+	ShortUrl    string
+	TotalClicks sql.NullInt32
+	DailyClicks sql.NullInt32
+	LastClicked sql.NullTime
+	CreatedAt   sql.NullTime
+	UpdatedAt   sql.NullTime
+}
+
 type User struct {
 	ID             uuid.UUID
 	Username       string

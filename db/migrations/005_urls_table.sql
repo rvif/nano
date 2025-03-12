@@ -11,8 +11,5 @@ CREATE TABLE urls (
     updated_at TIMESTAMP with time zone DEFAULT now()
 );
 
---- TODO: cron-job to reset daily_clicks
---- TODO: trigger to update updated_at when total_clicks, daily_clicks, short_url is updated
-
 -- +goose Down
 DROP TABLE urls;

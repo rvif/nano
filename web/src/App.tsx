@@ -7,13 +7,7 @@ import "./App.css";
 import { Theme, ThemePanel, Spinner } from "@radix-ui/themes";
 
 // Router
-import {
-  BrowserRouter,
-  Navigate,
-  Route,
-  Routes,
-  useLocation,
-} from "react-router-dom";
+import { BrowserRouter, Route, Routes, useLocation } from "react-router-dom";
 
 // Store
 import { useAppSelector } from "./store/hooks";
@@ -49,11 +43,9 @@ const AnalyticsPage = React.lazy(() => import("./pages/AnalyticsPage"));
 // Utility
 const NotFoundPage = React.lazy(() => import("./pages/utility/NotFoundPage"));
 
-// TODO: Implement after adding URL logic in the backend
 const RedirectingPage = React.lazy(
   () => import("./pages/utility/RedirectingPage")
 );
-const SlugValidator = React.lazy(() => import("./pages/utility/SlugValidator"));
 
 // Navigation loader component -> to create loading states during client transitions
 const NavigationLoader = ({ children }: { children: React.ReactNode }) => {
@@ -77,7 +69,7 @@ const NavigationLoader = ({ children }: { children: React.ReactNode }) => {
       });
     };
 
-    // Add a small delay to allow React to render the new route
+    // small delay to allow React to render the new route
     const timer = setTimeout(checkIfContentReady, 10);
 
     return () => {
@@ -199,7 +191,7 @@ function App() {
                 element={
                   <Suspense fallback={<LoadingSpinner />}>
                     <NavigationLoader>
-                      <SlugValidator />
+                      <RedirectingPage />
                     </NavigationLoader>
                   </Suspense>
                 }

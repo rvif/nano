@@ -27,7 +27,7 @@ func HealthCheckHandler(c *gin.Context) {
 	if dbConn == nil {
 		healthStatus["database"] = ServiceStatus{
 			Status:  "unavailable",
-			Message: "Database connection not initialized",
+			Message: "Database unavailable/not configured",
 		}
 	} else {
 		if err := dbConn.Ping(); err != nil {
@@ -38,7 +38,7 @@ func HealthCheckHandler(c *gin.Context) {
 		} else {
 			healthStatus["database"] = ServiceStatus{
 				Status:  "healthy",
-				Message: "Database connection successful",
+				Message: "Database connection and ping successful",
 			}
 		}
 	}
@@ -53,7 +53,7 @@ func HealthCheckHandler(c *gin.Context) {
 	} else {
 		healthStatus["auth"] = ServiceStatus{
 			Status:  "healthy",
-			Message: "JWT authentication configured",
+			Message: "Authentication configured",
 		}
 	}
 
