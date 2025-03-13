@@ -139,7 +139,7 @@ const LoginPage = () => {
           })
         );
 
-        console.log("Login successful!");
+        // console.log("Login successful!");
         navigate("/");
       } catch (error) {
         setFormSubmitting(false);

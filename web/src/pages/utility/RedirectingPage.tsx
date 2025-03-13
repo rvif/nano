@@ -18,7 +18,8 @@ function RedirectingPage() {
   useEffect(() => {
     async function checkSlug() {
       try {
-        const response = await fetch(`/api/v1/url/${slug}`);
+        // initially just validating the slug, set increment=false to avoid counting
+        const response = await fetch(`/api/v1/url/${slug}?increment=false`);
 
         if (response.status === 404) {
           setError("URL not found");
@@ -42,6 +43,18 @@ function RedirectingPage() {
   useEffect(() => {
     if (!redirectUrl) return;
 
+    // before redirect, make another request with type=redirect
+    // to count the click just once
+    async function incrementClickCount() {
+      try {
+        await fetch(`/api/v1/url/${slug}?type=redirect`);
+      } catch (error) {
+        console.error("Error incrementing click count:", error);
+      }
+    }
+
+    incrementClickCount();
+
     const timer = setInterval(() => {
       setCountdown((prev) => {
         if (prev <= 1) {
@@ -54,7 +67,7 @@ function RedirectingPage() {
     }, 1000);
 
     return () => clearInterval(timer);
-  }, [redirectUrl]);
+  }, [redirectUrl, slug]);
 
   if (error) {
     return <NotFoundPage />;

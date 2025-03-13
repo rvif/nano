@@ -2,9 +2,9 @@ package handlers
 
 import (
 	"database/sql"
+	"fmt"
 	"math/rand"
 	"net/http"
-	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
@@ -12,61 +12,10 @@ import (
 	"github.com/rvif/nano-url/internal/db/queries"
 )
 
-// all requests
-/*
- 	// URLs -> shortURLs
-    url.POST("/shorten", handlers.CreateURLHandler)  ✅
-    url.GET("/my-links", handlers.GetURLsByUserIDHandler)
-    url.PATCH("/update/:short_url", handlers.UpdateShortURLHandler)
-    url.GET("/analytics/:short_url", handlers.GetURLAnalyticsHandler)
-    url.DELETE("/delete/:short_url", handlers.DeleteURLHandler)
-
-*/
-
-/*
--- name: CreateURL :one  ✅
-INSERT INTO urls (id, user_id, url, short_url)
-VALUES ($1, $2, $3, $4)
-RETURNING id, user_id, url, short_url, total_clicks, daily_clicks, last_clicked, created_at, updated_at;
-
--- name: GetURLsByUserID :many
-SELECT id, url, short_url, created_at, updated_at
-FROM urls
-WHERE user_id = $1;
-
--- name: UpdateShortURL :one
-UPDATE urls
-SET short_url = $1, updated_at = now()
-WHERE id = $2
-RETURNING id, user_id, url, short_url, total_clicks, daily_clicks, last_clicked, created_at, updated_at;
-
--- name: DeleteURL :exec
-DELETE FROM urls WHERE short_url = $1;
-
--- name: GetURLAnalytics :one
-SELECT total_clicks, daily_clicks, last_clicked
-FROM urls
-WHERE short_url = $1;
-
--- name: IncrementURLClicks :exec
-UPDATE urls
-SET total_clicks = total_clicks + 1,
-    daily_clicks = daily_clicks + 1,
-    last_clicked = now()
-WHERE short_url = $1;
-
--- name: ResetDailyClicks :exec
-UPDATE urls
-SET daily_clicks = 0;
-
-
-*/
-
 const charset = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789"
 
 func generateShortURL() string {
-	length := 4
-	rand.Seed(time.Now().UnixNano())
+	const length = 5
 	shortURL := make([]byte, length)
 
 	for i := range shortURL {
@@ -80,7 +29,7 @@ func createUniqueShortURL(db *sql.DB) (string, error) {
 	for {
 		shortURL := generateShortURL()
 
-		// Check if our generated short URL already exists
+		// check if our generated short_url already exists in db
 		var exists bool
 		err := db.QueryRow("SELECT EXISTS (SELECT 1 FROM urls WHERE short_url = $1)", shortURL).Scan(&exists)
 		if err != nil {
@@ -119,7 +68,7 @@ func CreateURLHandler(c *gin.Context) {
 	var shortURL string
 	if req.ShortURL != "" {
 
-		// Check if user provided short URL already exists
+		// check if user provided short_url already exists
 		var exists bool
 		err := DB.QueryRow("SELECT EXISTS (SELECT 1 FROM urls WHERE short_url = $1)", req.ShortURL).Scan(&exists)
 		if err != nil {
@@ -132,13 +81,11 @@ func CreateURLHandler(c *gin.Context) {
 		}
 		shortURL = req.ShortURL
 	} else {
-
 		shortURL, err = createUniqueShortURL(DB)
-		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "Could not generate short URL"})
-			return
+		// if we get a duplicate short_url, keep trying until we get a unique one
+		for err != nil {
+			shortURL, err = createUniqueShortURL(DB)
 		}
-
 	}
 
 	url, err := q.CreateURL(c, queries.CreateURLParams{
@@ -149,6 +96,168 @@ func CreateURLHandler(c *gin.Context) {
 
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Could not create URL"})
+		return
+	}
+
+	/* Before redirecting, update user analytics */
+	userID, err = q.GetUserIDByShortURL(c, shortURL)
+	if err != nil {
+		fmt.Printf("Error getting user ID for slug %s: %v\n", shortURL, err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Internal server error"})
+		return
+	}
+
+	_, err = q.UpdateAnalytics(c, queries.UpdateAnalyticsParams{
+		TotalUrls:        1,
+		TotalTotalClicks: 0,
+		UserID:           userID,
+	})
+
+	if err != nil {
+		fmt.Printf("Error updating analytics for user %s: %v\n", userID, err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Internal server error"})
+		return
+	}
+
+	/* End of user analytics update */
+
+	c.JSON(http.StatusOK, gin.H{
+		"id":           url.ID,
+		"user_id":      url.UserID,
+		"url":          url.Url,
+		"short_url":    url.ShortUrl,
+		"total_clicks": url.TotalClicks,
+		"daily_clicks": url.DailyClicks,
+		"last_clicked": url.LastClicked,
+		"created_at":   url.CreatedAt,
+		"updated_at":   url.UpdatedAt,
+	})
+}
+
+type GetURLSByUserIDRequest struct {
+	UserID uuid.UUID `json:"user_id"`
+}
+
+func GetURLSByUserIDHandler(c *gin.Context) {
+	var req GetURLSByUserIDRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	DB := db.GetDB()
+	q := queries.New(DB)
+
+	urls, err := q.GetURLsByUserID(c, req.UserID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Could not get URLs"})
+		return
+	}
+
+	var response []gin.H
+	for _, url := range urls {
+		response = append(response, gin.H{
+			"id":         url.ID,
+			"url":        url.Url,
+			"short_url":  url.ShortUrl,
+			"created_at": url.CreatedAt,
+			"updated_at": url.UpdatedAt,
+		})
+	}
+
+	c.JSON(http.StatusOK, response)
+}
+
+type DeleteURLRequest struct {
+	ShortURL string `json:"short_url"`
+}
+
+func DeleteURLHandler(c *gin.Context) {
+	var req DeleteURLRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	DB := db.GetDB()
+	q := queries.New(DB)
+
+	err := q.DeleteURL(c, req.ShortURL)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Could not delete URL"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "URL deleted"})
+}
+
+type GetURLAnalyticsRequest struct {
+	ShortURL string `json:"short_url"`
+}
+
+func GetURLAnalyticsHandler(c *gin.Context) {
+	var req GetURLAnalyticsRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	DB := db.GetDB()
+	q := queries.New(DB)
+
+	url, err := q.GetURLAnalytics(c, req.ShortURL)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Could not get URL analytics"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"total_clicks": url.TotalClicks,
+		"daily_clicks": url.DailyClicks,
+		"last_clicked": url.LastClicked,
+	})
+}
+
+type UpdateShortURLRequest struct {
+	UrlID       uuid.UUID `json:"url_id"`
+	NewURL      string    `json:"new_url"`
+	NewShortURL string    `json:"new_short_url"`
+}
+
+func UpdateShortURLHandler(c *gin.Context) {
+	var req UpdateShortURLRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	DB := db.GetDB()
+	q := queries.New(DB)
+
+	existingURL, err := q.GetURLByID(c, req.UrlID)
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "URL not found"})
+		return
+	}
+
+	// use existing values if new values are not provided
+	newURL := req.NewURL
+	if newURL == "" {
+		newURL = existingURL.Url
+	}
+
+	newShortURL := req.NewShortURL
+	if newShortURL == "" {
+		newShortURL = existingURL.ShortUrl
+	}
+
+	url, err := q.UpdateShortURL(c, queries.UpdateShortURLParams{
+		Column1: newURL,
+		Column2: newShortURL,
+		ID:      req.UrlID,
+	})
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Could not update short URL"})
 		return
 	}
 

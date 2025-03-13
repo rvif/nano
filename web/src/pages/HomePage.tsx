@@ -1,9 +1,12 @@
 // Desktop view ✅
 // Mobile view ✅
+// Logic ✅
 
 import { Separator, Text, Box, Flex, Em, Badge } from "@radix-ui/themes";
+import { useAppSelector } from "../store/hooks";
 
 const HomePage = () => {
+  const appearance = useAppSelector((state) => state.theme.appearance);
   return (
     <Flex
       className="h-[calc(100vh-110px)] overflow-y-hidden"
@@ -69,14 +72,25 @@ const HomePage = () => {
         orientation={{ initial: "horizontal", xl: "vertical" }}
       />
 
-      <Box className="h-[calc(100vh-110px)] xl:flex-1/2 md:!my-4 !my-0 ">
+      <Box className="h-[calc(100vh-110px)] xl:flex-1/2 md:!my-4 !my-0">
         <Flex align="center" justify="center" className="h-full xl:pb-0">
-          <img
-            src="/placeholder_hero.webp"
-            alt="Nano Dashboard"
-            className="w-full max-w-[450px] md:max-w-xl xl:max-w-2xl rounded-2xl transition-shadow duration-300"
-            style={{ boxShadow: "var(--shadow-4)" }}
-          />
+          {appearance === "light" ? (
+            <img
+              src="/hero_light.png"
+              alt="Nano Dashboard"
+              className="w-full max-w-[480px] md:max-w-2xl xl:max-w-3xl rounded-2xl transition-shadow duration-300 "
+              style={{ boxShadow: "var(--shadow-4)" }}
+            />
+          ) : (
+            <img
+              src="/hero_dark.png"
+              alt="Nano Dashboard"
+              className="w-full max-w-[480px] md:max-w-2xl xl:max-w-3xl rounded-2xl transition-shadow duration-300"
+              style={{
+                boxShadow: "var(--shadow-4)",
+              }}
+            />
+          )}
         </Flex>
       </Box>
     </Flex>

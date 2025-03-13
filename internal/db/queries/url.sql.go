@@ -69,6 +69,33 @@ func (q *Queries) GetURLAnalytics(ctx context.Context, shortUrl string) (GetURLA
 	return i, err
 }
 
+const getURLByID = `-- name: GetURLByID :one
+SELECT id, url, short_url, created_at, updated_at
+FROM urls
+WHERE id = $1
+`
+
+type GetURLByIDRow struct {
+	ID        uuid.UUID
+	Url       string
+	ShortUrl  string
+	CreatedAt sql.NullTime
+	UpdatedAt sql.NullTime
+}
+
+func (q *Queries) GetURLByID(ctx context.Context, id uuid.UUID) (GetURLByIDRow, error) {
+	row := q.db.QueryRowContext(ctx, getURLByID, id)
+	var i GetURLByIDRow
+	err := row.Scan(
+		&i.ID,
+		&i.Url,
+		&i.ShortUrl,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
+}
+
 const getURLByShortURL = `-- name: GetURLByShortURL :one
 SELECT url FROM urls WHERE short_url = $1
 `
@@ -123,6 +150,17 @@ func (q *Queries) GetURLsByUserID(ctx context.Context, userID uuid.UUID) ([]GetU
 	return items, nil
 }
 
+const getUserIDByShortURL = `-- name: GetUserIDByShortURL :one
+SELECT user_id FROM urls WHERE short_url = $1
+`
+
+func (q *Queries) GetUserIDByShortURL(ctx context.Context, shortUrl string) (uuid.UUID, error) {
+	row := q.db.QueryRowContext(ctx, getUserIDByShortURL, shortUrl)
+	var user_id uuid.UUID
+	err := row.Scan(&user_id)
+	return user_id, err
+}
+
 const incrementURLClicks = `-- name: IncrementURLClicks :exec
 UPDATE urls
 SET total_clicks = total_clicks + 1,
@@ -159,18 +197,22 @@ func (q *Queries) SlugExists(ctx context.Context, shortUrl string) (bool, error)
 
 const updateShortURL = `-- name: UpdateShortURL :one
 UPDATE urls 
-SET short_url = $1, updated_at = now()
-WHERE id = $2
+SET 
+    url = COALESCE(NULLIF($1, ''), url), 
+    short_url = COALESCE(NULLIF($2, ''), short_url), 
+    updated_at = now()
+WHERE id = $3
 RETURNING id, user_id, url, short_url, total_clicks, daily_clicks, last_clicked, created_at, updated_at
 `
 
 type UpdateShortURLParams struct {
-	ShortUrl string
-	ID       uuid.UUID
+	Column1 interface{}
+	Column2 interface{}
+	ID      uuid.UUID
 }
 
 func (q *Queries) UpdateShortURL(ctx context.Context, arg UpdateShortURLParams) (Url, error) {
-	row := q.db.QueryRowContext(ctx, updateShortURL, arg.ShortUrl, arg.ID)
+	row := q.db.QueryRowContext(ctx, updateShortURL, arg.Column1, arg.Column2, arg.ID)
 	var i Url
 	err := row.Scan(
 		&i.ID,

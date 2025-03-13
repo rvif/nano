@@ -3,6 +3,11 @@ INSERT INTO urls (user_id, url, short_url)
 VALUES ($1, $2, $3)
 RETURNING id, user_id, url, short_url, total_clicks, daily_clicks, last_clicked, created_at, updated_at;
 
+-- name: GetURLByID :one
+SELECT id, url, short_url, created_at, updated_at
+FROM urls
+WHERE id = $1;
+
 -- name: GetURLsByUserID :many
 SELECT id, url, short_url, created_at, updated_at 
 FROM urls 
@@ -16,8 +21,11 @@ SELECT url FROM urls WHERE short_url = $1;
 
 -- name: UpdateShortURL :one
 UPDATE urls 
-SET short_url = $1, updated_at = now()
-WHERE id = $2
+SET 
+    url = COALESCE(NULLIF($1, ''), url), 
+    short_url = COALESCE(NULLIF($2, ''), short_url), 
+    updated_at = now()
+WHERE id = $3
 RETURNING id, user_id, url, short_url, total_clicks, daily_clicks, last_clicked, created_at, updated_at;
 
 -- name: DeleteURL :exec
@@ -38,3 +46,7 @@ WHERE short_url = $1;
 -- name: ResetDailyClicks :exec
 UPDATE urls 
 SET daily_clicks = 0;
+
+
+-- name: GetUserIDByShortURL :one
+SELECT user_id FROM urls WHERE short_url = $1;

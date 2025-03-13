@@ -48,6 +48,7 @@ const Navbar = () => {
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
+      if (!isAuthenticated || currentPath.startsWith("/auth")) return;
       if (event.shiftKey && event.key.toLowerCase() === "s") {
         event.preventDefault();
         navigate("/shortner");
@@ -145,7 +146,7 @@ const Navbar = () => {
             <Box>
               <Flex align="center" gap="4">
                 {isAuthenticated ? (
-                  <DropdownMenu.Root>
+                  <DropdownMenu.Root modal={false}>
                     <DropdownMenu.Trigger>
                       <Button variant="ghost" highContrast>
                         <Flex align="center" gap="2">

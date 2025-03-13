@@ -67,6 +67,7 @@ func RegisterHandler(c *gin.Context) {
 	q := queries.New(DB)
 
 	userID := uuid.New()
+
 	user, err := q.CreateUser(c, queries.CreateUserParams{
 		ID:             userID,
 		Username:       req.Username,
@@ -79,6 +80,24 @@ func RegisterHandler(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failure in creating user"})
 		return
 	}
+
+	/*
+		Create analytics record for user if it doesn't exist
+	*/
+	_, err = q.CreateAnalytics(c, queries.CreateAnalyticsParams{
+		ID:     uuid.New(),
+		UserID: userID,
+	})
+
+	if err != nil {
+		fmt.Println("Error creating analytics record: ", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failure in creating analytics record"})
+		return
+	}
+
+	/*
+		XX end XX
+	*/
 
 	c.JSON(http.StatusCreated, gin.H{"message": "User registered successfully", "user": user})
 }

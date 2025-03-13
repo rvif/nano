@@ -23,7 +23,6 @@ import {
   CheckCircledIcon,
   CopyIcon,
   ExternalLinkIcon,
-  InfoCircledIcon,
   CrossCircledIcon,
   CheckIcon,
 } from "@radix-ui/react-icons";
@@ -60,6 +59,8 @@ const isValidCustomPath = (path: string): boolean => {
   // alphanumerical characters, hyphens, and underscores pnly
   return /^[a-zA-Z0-9-_]+$/.test(path);
 };
+
+const MIN_LOADING_TIME = 500;
 
 const ShortnerPage = () => {
   const [url, setUrl] = useState("");
@@ -100,6 +101,8 @@ const ShortnerPage = () => {
     setResult(null);
     setSuccess(false);
 
+    const startTime = Date.now();
+
     try {
       const response = await api.post("/url/shorten", {
         user_id: user?.id,
@@ -107,10 +110,26 @@ const ShortnerPage = () => {
         short_url: shortUrl || undefined, // send if it has a value
       });
 
+      const elapsedTime = Date.now() - startTime;
+
+      if (elapsedTime < MIN_LOADING_TIME) {
+        await new Promise((resolve) =>
+          setTimeout(resolve, MIN_LOADING_TIME - elapsedTime)
+        );
+      }
+
       setResult(response.data.short_url);
       setSuccess(true);
     } catch (error: any) {
       console.error("Error shortening URL:", error);
+
+      const elapsedTime = Date.now() - startTime;
+      if (elapsedTime < MIN_LOADING_TIME) {
+        await new Promise((resolve) =>
+          setTimeout(resolve, MIN_LOADING_TIME - elapsedTime)
+        );
+      }
+
       setError(
         error.response?.data?.message ||
           "Failed to shorten URL. Please try again."
@@ -152,7 +171,7 @@ const ShortnerPage = () => {
                 </Text>
                 <TextField.Root
                   size="3"
-                  placeholder="Enter your looooong url (https://...)"
+                  placeholder="Enter your looooong url here"
                   value={url}
                   onChange={(e) => setUrl(e.target.value)}
                   className="!w-full !mt-2"
@@ -168,7 +187,7 @@ const ShortnerPage = () => {
               <Box>
                 <Flex align="baseline" gap="2" className="!mb-2">
                   <Text as="label" size="3" weight="medium">
-                    Custom URL Path (Optional)
+                    Custom Slug (optional)
                   </Text>
                   <Text size="1" color="gray" className="!italic">
                     Make it memorable
@@ -176,7 +195,7 @@ const ShortnerPage = () => {
                 </Flex>
                 <TextField.Root
                   size="3"
-                  placeholder="my-awesome-link"
+                  placeholder="nano-url"
                   value={shortUrl}
                   onChange={(e) => setShortUrl(e.target.value)}
                   className="!w-full !mt-2"
@@ -193,7 +212,7 @@ const ShortnerPage = () => {
               {url && (
                 <Button
                   type="reset"
-                  variant="soft"
+                  variant="surface"
                   radius="large"
                   onClick={() => {
                     setUrl("");
@@ -260,18 +279,18 @@ const ShortnerPage = () => {
                       weight="light"
                       className="!text-slate-700 !truncate !flex-grow"
                     >
-                      <Em>{"http://localhost:5173/" + result}</Em>
+                      {"http://localhost:5173/" + result}
                     </Text>
                     <Tooltip content={copied ? "Copied!" : "Copy to clipboard"}>
                       <Button
                         size="2"
-                        variant={copied ? "soft" : "outline"}
+                        variant={copied ? "soft" : "solid"}
                         onClick={copyToClipboard}
                         className="!whitespace-nowrap"
                         radius="large"
                       >
                         {copied ? (
-                          <div className="w-14 flex items-center justify-center">
+                          <div className="w-14 h-full flex items-center justify-center">
                             <CheckIcon />
                           </div>
                         ) : (
@@ -282,7 +301,7 @@ const ShortnerPage = () => {
                       </Button>
                     </Tooltip>
                     <Tooltip content="Open in new tab">
-                      <Button asChild size="2" variant="outline" radius="large">
+                      <Button asChild size="2" variant="surface" radius="large">
                         <Link
                           href={result}
                           target="_blank"

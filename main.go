@@ -12,9 +12,11 @@ import (
 	"github.com/rvif/nano-url/internal/config"
 	"github.com/rvif/nano-url/internal/handlers"
 	"github.com/rvif/nano-url/internal/middleware"
+	"github.com/rvif/nano-url/internal/services"
 )
 
 func main() {
+	fmt.Println("Starting nano-url...")
 	cfg := config.LoadConfig()
 	// Connect to the database
 	db.InitDB()
@@ -23,6 +25,21 @@ func main() {
 	username := os.Getenv("SMTP_USERNAME")
 	password := os.Getenv("SMTP_PASSWORD")
 	handlers.InitMailer(username, password)
+
+	log.Println("Initializing daily reset service...")
+
+	// Initialize the daily reset service
+	istLocation, err := time.LoadLocation("Asia/Kolkata")
+	if err != nil {
+		log.Printf("Error loading IST timezone: %v. Using local timezone instead.", err)
+		istLocation = time.Local
+	} else {
+		log.Printf("Successfully loaded IST timezone: %v", istLocation)
+	}
+
+	// Daily clicks will reset on 12:00 AM IST
+	dailyResetService := services.NewDailyResetService(istLocation)
+	dailyResetService.Start()
 
 	// Start the server
 	fmt.Println("Server starting on port: ", cfg.Port)
@@ -57,17 +74,17 @@ func main() {
 		protected.Use(middleware.AuthMiddleware())
 		protected.GET("/me", handlers.MeHandler)
 
-		// TODO: add url shortener routes on protected group
+		// URL shortener routes
 		url := protected.Group("/url")
 		{
-			// URLs -> shortURLs
 			url.POST("/shorten", handlers.CreateURLHandler)
-			// url.GET("/my-links", handlers.GetURLsByUserIDHandler)
-			// url.PATCH("/update/:short_url", handlers.UpdateShortURLHandler)
-			// url.DELETE("/delete/:short_url", handlers.DeleteURLHandler)
-			// url.GET("/analytics/:short_url", handlers.GetURLAnalyticsHandler)
+			url.POST("/get-urls", handlers.GetURLSByUserIDHandler)
+			url.POST("/update/:url_id", handlers.UpdateShortURLHandler)
+			url.POST("/delete/:short_url", handlers.DeleteURLHandler)
+			url.POST("/analytics/:short_url", handlers.GetURLAnalyticsHandler)
 
 		}
+		protected.GET("/analytics", handlers.GetMyAnalyticsHandler)
 
 		v1Router.GET("/url/:slug", handlers.RedirectToURLHandler)
 		v1Router.GET("/health", handlers.HealthCheckHandler)
@@ -77,7 +94,7 @@ func main() {
 	}
 
 	// Blocking call
-	err := router.Run(fmt.Sprintf(":%v", cfg.Port))
+	err = router.Run(fmt.Sprintf(":%v", cfg.Port))
 	if err != nil {
 		log.Fatalf("ERROR starting server: %v", err)
 	}

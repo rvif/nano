@@ -48,3 +48,13 @@ type User struct {
 	UpdatedAt      time.Time
 	PfpUrl         string
 }
+
+type UserAnalytic struct {
+	ID               uuid.UUID
+	UserID           uuid.UUID
+	TotalUrls        int32
+	TotalTotalClicks int32
+	AvgDailyClicks   float64
+	CreatedAt        sql.NullTime
+	UpdatedAt        sql.NullTime
+}

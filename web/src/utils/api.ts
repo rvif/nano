@@ -64,7 +64,7 @@ api.interceptors.response.use(
 
     // If token refresh failed or another error occurred
     if (axios.isAxiosError(error) && error.response?.status === 401) {
-      console.log("Received 401 unauthorized response");
+      // console.log("Received 401 unauthorized response");
       store.dispatch(logout());
     }
     return Promise.reject(error);

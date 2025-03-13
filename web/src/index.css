@@ -5,3 +5,9 @@
   margin: 0;
   padding: 0;
 }
+
+/* to fix layout-shifts caused by scrollbar on active modals like dialog and alert-dialog  */
+html body[data-scroll-locked] {
+  overflow: visible !important;
+  margin-right: 0 !important;
+}
