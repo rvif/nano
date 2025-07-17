@@ -58,4 +58,4 @@ else
 fi
 
 echo "============= STARTING APPLICATION =============="
-exec ./app 2>&1
+exec ./main 2>&1
