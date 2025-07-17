@@ -27,7 +27,7 @@ function RedirectingPage() {
       try {
         console.log(`Checking slug: ${slug} using API base: ${apiBaseUrl}`);
         const response = await fetch(
-          `${apiBaseUrl}/url/${slug}?increment=false`
+          `${apiBaseUrl}/api/v1/url/${slug}?increment=false`
         );
 
         if (response.status === 404) {
@@ -58,7 +58,7 @@ function RedirectingPage() {
     // to count the click just once
     async function incrementClickCount() {
       try {
-        await fetch(`${apiBaseUrl}/url/${slug}?type=redirect`);
+        await fetch(`${apiBaseUrl}/api/v1/url/${slug}?type=redirect`);
       } catch (error) {
         console.error("Error incrementing click count:", error);
       }

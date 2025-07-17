@@ -105,7 +105,7 @@ func main() {
 
 	// Serving static files first
 	// Serve static files from public directory
-	router.Static("/images", "./public/images")
+	router.Static("/api/v1/images", "./public/images")
 	log.Printf("Serving static files from ./public/images")
 
 	// test path endpoint after the static route to check if it's static files are working
