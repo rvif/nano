@@ -10,20 +10,17 @@ import {
   Spinner,
   Text,
 } from "@radix-ui/themes";
-import { useAppSelector } from "../store/hooks";
+
 import api from "../utils/api";
 import { useEffect, useState } from "react";
 import {
-  ArchiveIcon,
   ClockIcon,
   CountdownTimerIcon,
   CrumpledPaperIcon,
   DoubleArrowUpIcon,
-  FileTextIcon,
   LightningBoltIcon,
   LinkBreak2Icon,
   MagicWandIcon,
-  MixIcon,
   RocketIcon,
   TargetIcon,
 } from "@radix-ui/react-icons";
@@ -40,7 +37,6 @@ interface Analytics {
 }
 
 const AnalyticsPage = () => {
-  const { user } = useAppSelector((state) => state.auth);
   const [analytics, setAnalytics] = useState<Analytics | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);

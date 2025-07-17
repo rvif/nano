@@ -29,6 +29,13 @@ import {
 import { useAppSelector } from "../store/hooks";
 import { formatProfileImageUrl } from "../utils/formatProfileImage";
 
+// Get the API URL from environment variables
+const apiBaseUrl =
+  import.meta.env.VITE_API_URL ||
+  (import.meta.env.PROD
+    ? "https://url-shortener-backend-1218228353.asia-south1.run.app"
+    : "http://localhost:8080");
+
 const ProfilePage = () => {
   const { user } = useAppSelector((state) => state.auth);
 
@@ -171,7 +178,7 @@ const ProfilePage = () => {
                 <Flex direction="column" gap="3">
                   <Box>
                     <img
-                      src={formatProfileImageUrl(user?.pfpUrl)}
+                      src={`${apiBaseUrl}${user?.pfpUrl}`}
                       alt="Profile"
                       style={{
                         width: "100%",
@@ -195,14 +202,15 @@ const ProfilePage = () => {
                   >
                     <Flex align="center" gap="2">
                       <Link
-                        href={"http://localhost:8080" + user?.pfpUrl}
+                        href={`${apiBaseUrl}${user?.pfpUrl}`}
                         target="_blank"
                       >
                         <ExternalLinkIcon width={18} height={18} />
                       </Link>
 
                       <Text size="2" className="select-none !tracking-tighter">
-                        http://localhost:8080{user?.pfpUrl}
+                        {apiBaseUrl}
+                        {user?.pfpUrl}
                       </Text>
                     </Flex>
 
@@ -212,7 +220,7 @@ const ProfilePage = () => {
                         variant="ghost"
                         onClick={() =>
                           copyToClipboard(
-                            "localhost:8080" + (user?.pfpUrl || ""),
+                            `${apiBaseUrl}${user?.pfpUrl || ""}`,
                             "url"
                           )
                         }

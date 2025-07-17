@@ -4,7 +4,7 @@ import React, { Suspense, useEffect, useRef, useState } from "react";
 // Themes and styles
 import "@radix-ui/themes/styles.css";
 import "./App.css";
-import { Theme, ThemePanel, Spinner } from "@radix-ui/themes";
+import { Theme, Spinner } from "@radix-ui/themes";
 
 // Router
 import { BrowserRouter, Route, Routes, useLocation } from "react-router-dom";
@@ -22,6 +22,23 @@ import HealthCheckPage from "./pages/utility/HealthCheckPage";
 import TokenRefresher from "./components/TokenRefresher";
 import ForgotPassword from "./pages/auth/ForgotPassword";
 import PublicOnlyRoute from "./pages/utility/PublicOnlyRoute";
+
+const APP_VERSION = "0.6.0"; // increment this on every deploy
+
+const checkCacheVersion = () => {
+  try {
+    const cachedVersion = localStorage.getItem("app_version");
+    if (cachedVersion !== APP_VERSION) {
+      console.log("App version changed, clearing caches");
+      localStorage.removeItem("cached_user");
+      localStorage.removeItem("cached_user_urls");
+
+      localStorage.setItem("app_version", APP_VERSION);
+    }
+  } catch (error) {
+    console.error("Error checking cache version:", error);
+  }
+};
 
 const LoadingSpinner = () => {
   return (
@@ -89,6 +106,9 @@ function App() {
   const { isAuthenticated, user } = useAppSelector((state) => state.auth);
 
   useEffect(() => {
+    // Check cache version on app load
+    checkCacheVersion();
+
     if (isAuthenticated && !user) {
       fetchUserProfile();
     }

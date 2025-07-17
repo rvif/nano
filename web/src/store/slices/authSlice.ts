@@ -16,10 +16,18 @@ interface AuthState {
 }
 
 const initialState: AuthState = {
+  user: (() => {
+    try {
+      const cachedUser = localStorage.getItem("cached_user");
+      return cachedUser ? JSON.parse(cachedUser) : null;
+    } catch (error) {
+      console.error("Error loading cached user:", error);
+      return null;
+    }
+  })(),
   isAuthenticated: !!localStorage.getItem("accessToken"),
   accessToken: localStorage.getItem("accessToken"),
   refreshToken: localStorage.getItem("refreshToken"),
-  user: null,
   loading: false,
 };
 
@@ -41,6 +49,16 @@ const authSlice = createSlice({
     },
     setUser: (state, action: PayloadAction<User>) => {
       state.user = action.payload;
+      try {
+        // Cache user data when it's set
+        if (action.payload) {
+          localStorage.setItem("cached_user", JSON.stringify(action.payload));
+        } else {
+          localStorage.removeItem("cached_user");
+        }
+      } catch (error) {
+        console.error("Error caching user data:", error);
+      }
     },
     logout: (state) => {
       state.isAuthenticated = false;
@@ -49,6 +67,13 @@ const authSlice = createSlice({
       state.user = null;
       localStorage.removeItem("accessToken");
       localStorage.removeItem("refreshToken");
+      try {
+        localStorage.removeItem("cached_user");
+        localStorage.removeItem("cached_user_urls");
+        localStorage.removeItem("token");
+      } catch (error) {
+        console.error("Error clearing cached data:", error);
+      }
     },
   },
 });

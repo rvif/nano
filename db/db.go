@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"fmt"
 	"log"
+	"os"
 
 	_ "github.com/lib/pq"
 	"github.com/rvif/nano-url/internal/config"
@@ -11,23 +12,33 @@ import (
 
 var DB *sql.DB
 
-func InitDB() {
+func InitDB() error {
 	cfg := config.LoadConfig()
 
 	// connect to the database
 	var err error
 	DB, err = sql.Open("postgres", cfg.DB_URL)
 	if err != nil {
-		log.Fatalf("ERROR connecting to database: %v", err)
+		return fmt.Errorf("failed to connect to database: %w", err)
 	}
 
-	fmt.Println("Successfully connected to database")
+	log.Println("Successfully connected to database")
 
 	// ping the database
 	if err := DB.Ping(); err != nil {
-		log.Fatalf("ERROR pinging database: %v", err)
+		return fmt.Errorf("error pinging database: %v", err)
 	}
-	fmt.Println("Successfully pinged database")
+	log.Println("Successfully pinged database")
+
+	// Apply migrations in production
+	if os.Getenv("ENV") == "production" || os.Getenv("RUN_MIGRATIONS") == "true" {
+		log.Println("Running database migrations...")
+		if err := InitializeDatabase(DB); err != nil {
+			return fmt.Errorf("failed to initialize database: %w", err)
+		}
+	}
+
+	return nil
 }
 
 func GetDB() *sql.DB {

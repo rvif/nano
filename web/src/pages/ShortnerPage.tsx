@@ -26,6 +26,7 @@ import {
   CrossCircledIcon,
   CheckIcon,
 } from "@radix-ui/react-icons";
+import { generateAbsoluteUrl } from "../utils/urlGenerator";
 
 // Forbidden custom URL paths
 const RESERVED_PATHS = [
@@ -141,7 +142,8 @@ const ShortnerPage = () => {
 
   const copyToClipboard = () => {
     if (result) {
-      navigator.clipboard.writeText("http://localhost:5173/" + result);
+      // Use the environment variable for the frontend URL
+      navigator.clipboard.writeText(`${generateAbsoluteUrl(result)}`);
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     }
@@ -279,7 +281,7 @@ const ShortnerPage = () => {
                       weight="light"
                       className="!text-slate-700 !truncate !flex-grow"
                     >
-                      {"http://localhost:5173/" + result}
+                      {`${generateAbsoluteUrl(result)}`}
                     </Text>
                     <Tooltip content={copied ? "Copied!" : "Copy to clipboard"}>
                       <Button

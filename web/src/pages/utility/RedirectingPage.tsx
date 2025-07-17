@@ -7,6 +7,13 @@ import { useParams, useNavigate } from "react-router-dom";
 import NotFoundPage from "./NotFoundPage";
 import { Card, Em, Text } from "@radix-ui/themes";
 
+// Get the API base URL from environment variables
+const apiBaseUrl =
+  import.meta.env.VITE_API_URL ||
+  (import.meta.env.PROD
+    ? "https://url-shortener-backend-1218228353.asia-south1.run.app"
+    : "http://localhost:8080");
+
 function RedirectingPage() {
   const { slug } = useParams();
   const navigate = useNavigate();
@@ -18,20 +25,24 @@ function RedirectingPage() {
   useEffect(() => {
     async function checkSlug() {
       try {
-        // initially just validating the slug, set increment=false to avoid counting
-        const response = await fetch(`/api/v1/url/${slug}?increment=false`);
+        console.log(`Checking slug: ${slug} using API base: ${apiBaseUrl}`);
+        const response = await fetch(
+          `${apiBaseUrl}/api/v1/url/${slug}?increment=false`
+        );
 
         if (response.status === 404) {
           setError("URL not found");
           setLoading(false);
         } else if (response.ok) {
           const data = await response.json();
+          console.log("Redirect data received:", data);
           setRedirectUrl(data.originalURL);
         } else {
           setError("Something went wrong");
           setLoading(false);
         }
       } catch (err) {
+        console.error("Failed to fetch URL:", err);
         setError("Failed to fetch URL");
         setLoading(false);
       }
@@ -47,7 +58,7 @@ function RedirectingPage() {
     // to count the click just once
     async function incrementClickCount() {
       try {
-        await fetch(`/api/v1/url/${slug}?type=redirect`);
+        await fetch(`${apiBaseUrl}/api/v1/url/${slug}?type=redirect`);
       } catch (error) {
         console.error("Error incrementing click count:", error);
       }
@@ -59,6 +70,7 @@ function RedirectingPage() {
       setCountdown((prev) => {
         if (prev <= 1) {
           clearInterval(timer);
+          // Use window.location for external redirects
           window.location.href = redirectUrl;
           return 0;
         }

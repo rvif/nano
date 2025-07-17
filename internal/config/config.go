@@ -16,10 +16,16 @@ type Config struct {
 
 func LoadConfig() Config {
 	if os.Getenv("ENV") != "production" {
+		log.Println("Loading .env file in non-production environment")
 		_ = godotenv.Load()
+	} else {
+		log.Println("Running in production mode, skipping .env file")
 	}
 
-	port, err := strconv.Atoi(getEnv("PORT", "8080"))
+	portStr := getEnv("PORT", "8080")
+	log.Printf("PORT environment variable is set to: %s", portStr)
+
+	port, err := strconv.Atoi(portStr)
 	if err != nil {
 		log.Fatal("Invalid PORT: ", err)
 	}

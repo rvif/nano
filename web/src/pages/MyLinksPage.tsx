@@ -38,6 +38,7 @@ import {
 } from "@radix-ui/react-icons";
 import { useNavigate } from "react-router-dom";
 import FormatDate from "../utils/formatDate";
+import { generateAbsoluteUrl } from "../utils/urlGenerator";
 
 interface URL {
   id?: string;
@@ -54,10 +55,34 @@ interface Analytics {
   loading: boolean;
 }
 
+//! quick fix
+
+const isNullOrEpochDate = (dateString: string | null): boolean => {
+  if (!dateString) return true;
+
+  const date = new Date(dateString);
+  return (
+    date.getFullYear() < 1990 ||
+    dateString.includes("Jan 1, 05:53") ||
+    date.getTime() === 0 ||
+    dateString.includes("1 Jan 1")
+  );
+};
+
 const MyLinksPage = () => {
   const { user } = useAppSelector((state) => state.auth);
-  const [urls, setUrls] = useState<URL[]>([]);
+  const [urls, setUrls] = useState<URL[]>(() => {
+    // try to load cached URLs from localStorage
+    try {
+      const cachedUrls = localStorage.getItem("cached_user_urls");
+      return cachedUrls ? JSON.parse(cachedUrls) : [];
+    } catch (error) {
+      console.error("Error loading cached URLs:", error);
+      return [];
+    }
+  });
   const [loading, setLoading] = useState(true);
+  const [initialized, setInitialized] = useState(false);
   const [error, setError] = useState("");
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const navigate = useNavigate();
@@ -75,24 +100,37 @@ const MyLinksPage = () => {
     localStorage.setItem("entriesPerPage", entriesPerPage.toString());
   }, [entriesPerPage]);
 
+  // cache URLs whenever they change
+  useEffect(() => {
+    if (urls.length > 0) {
+      try {
+        localStorage.setItem("cached_user_urls", JSON.stringify(urls));
+      } catch (error) {
+        console.error("Error caching URLs:", error);
+      }
+    }
+  }, [urls]);
+
   useEffect(() => {
     const fetchUrls = async () => {
       if (!user?.id) {
         setError("You must be logged in to view your links");
         setLoading(false);
+        setInitialized(true);
         return;
       }
 
       try {
         const response = await api.post("/url/get-urls", { user_id: user.id });
 
-        // Apply the same fix here in the initial load effect
         if (!response.data || response.data.length === 0) {
           setUrls([]);
-          setError(""); // Clear any previous errors
+          // if there's cached data but API returns empty, clear the cache
+          localStorage.removeItem("cached_user_urls");
+          setError(""); // clear any previous errors
         } else if (Array.isArray(response.data)) {
           setUrls(response.data);
-          setError(""); // Clear any previous errors
+          setError(""); // clear any previous errors
         } else {
           console.error("Unexpected response format:", response.data);
           setError("Invalid response from server.");
@@ -100,10 +138,18 @@ const MyLinksPage = () => {
       } catch (err) {
         console.error("Error fetching URLs:", err);
         setError("Failed to load your links. Please try again later.");
+        // Don't clear cached URLs on error - keep showing previous data
       } finally {
         setLoading(false);
+        setInitialized(true);
       }
     };
+
+    // if we already have cached data, mark as initialized
+    // this ensures we show cached data immediately
+    if (urls.length > 0) {
+      setInitialized(true);
+    }
 
     fetchUrls();
   }, [user]);
@@ -122,6 +168,8 @@ const MyLinksPage = () => {
       if (!response.data || response.data.length === 0) {
         // response is null, or an empty array, set urls to an empty array
         setUrls([]);
+        // clear cache if API returns empty
+        localStorage.removeItem("cached_user_urls");
         setError(""); // Clear any previous errors
       } else if (Array.isArray(response.data)) {
         setUrls(response.data);
@@ -163,7 +211,7 @@ const MyLinksPage = () => {
   };
 
   const copyToClipboard = (shortUrl: string, id?: string) => {
-    const fullUrl = `http://localhost:5173/${shortUrl}`;
+    const fullUrl = generateAbsoluteUrl(shortUrl);
     navigator.clipboard.writeText(fullUrl);
 
     setCopiedId(id || null);
@@ -173,7 +221,6 @@ const MyLinksPage = () => {
     }, 2000);
   };
 
-  const [onDelete, setOnDelete] = useState(false);
   const deleteUrl = async (shortUrl: string) => {
     try {
       const response = await api.post("/url/delete/:short_url", {
@@ -183,8 +230,9 @@ const MyLinksPage = () => {
       // server returns {message: 'URL deleted'} on successful deletion
       if (response.data.message === "URL deleted") {
         // console.log("URL deleted:", shortUrl);
-        setOnDelete(true);
+
         await fetchUrls();
+        // fetchUrls function will update the cache
         console.log(response.data);
       } else {
         console.error("Unexpected response from server:", response.data);
@@ -328,7 +376,7 @@ const MyLinksPage = () => {
         </Text>
       </Flex>
 
-      {loading ? (
+      {loading || !initialized ? (
         <Card className="w-full !mt-4">
           <Flex align="center" justify="center" py="9">
             <Spinner size="2" />
@@ -419,12 +467,12 @@ const MyLinksPage = () => {
                         <Tooltip content="Open in new tab">
                           <IconButton
                             variant="ghost"
-                            onClick={() =>
-                              window.open(
-                                `http://localhost:5173/${url.short_url}`,
-                                "_blank"
-                              )
-                            }
+                            onClick={() => {
+                              const fullUrl = generateAbsoluteUrl(
+                                url.short_url
+                              );
+                              window.open(`${fullUrl}`, "_blank");
+                            }}
                             className=""
                           >
                             <ExternalLinkIcon />
@@ -516,13 +564,17 @@ const MyLinksPage = () => {
                                         <Text>
                                           Last clicked:{" "}
                                           <Em>
-                                            {analyticsMap[url.short_url]
-                                              ?.lastClicked
-                                              ? FormatDate(
+                                            {!analyticsMap[url.short_url]
+                                              ?.lastClicked ||
+                                            isNullOrEpochDate(
+                                              analyticsMap[url.short_url]
+                                                ?.lastClicked
+                                            )
+                                              ? "Never clicked"
+                                              : FormatDate(
                                                   analyticsMap[url.short_url]
                                                     ?.lastClicked
-                                                )
-                                              : "Never"}
+                                                )}
                                           </Em>
                                         </Text>
                                       </>

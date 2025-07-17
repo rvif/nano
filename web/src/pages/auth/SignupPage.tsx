@@ -20,8 +20,6 @@ import {
   CheckIcon,
   TrashIcon,
   UpdateIcon,
-  EyeOpenIcon,
-  EyeClosedIcon,
 } from "@radix-ui/react-icons";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
@@ -43,12 +41,11 @@ const SignupPage = () => {
   });
   const [uploadProgress, setUploadProgress] = useState(0);
   const [uploading, setUploading] = useState(false);
-  const [uploadComplete, setUploadComplete] = useState(false);
+
   const [formSubmitting, setFormSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [registrationSuccess, setRegistrationSuccess] = useState(false);
-  const [showPassword, setShowPassword] = useState(false);
 
   function validateEmail(email: string): boolean {
     const regex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -89,8 +86,6 @@ const SignupPage = () => {
         ...prev,
         profileImage: file,
       }));
-
-      setUploadComplete(true);
     }
   };
 
@@ -105,7 +100,7 @@ const SignupPage = () => {
     }));
     setUploadProgress(0);
     setUploading(false);
-    setUploadComplete(false);
+
     if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
@@ -135,25 +130,32 @@ const SignupPage = () => {
       }
 
       try {
+        console.log("Submitting registration form...");
+
         const config = {
-          headers: { "Content-Type": "multipart/form-data" },
+          headers: {
+            // Don't set Content-Type for multipart/form-data - let the browser set it
+            // "Content-Type": "multipart/form-data"
+          },
           ...(formData.profileImage && {
             onUploadProgress: (progressEvent: any) => {
               const percentCompleted = Math.round(
                 (progressEvent.loaded * 100) / progressEvent.total
               );
+              console.log(`Upload progress: ${percentCompleted}%`);
               setUploadProgress(percentCompleted);
             },
           }),
         };
 
+        console.log("Sending request to /auth/register");
         const response = await api.post(
           "/auth/register",
           formDataToSend,
           config
         );
+        console.log("Registration successful:", response.data);
 
-        setUploadComplete(true);
         setUploading(false);
         setRegistrationSuccess(true);
 
@@ -168,16 +170,22 @@ const SignupPage = () => {
         setUploading(false);
         setFormSubmitting(false);
 
-        if (axios.isAxiosError(error) && error.response) {
+        if (axios.isAxiosError(error)) {
+          console.error("Registration error details:", {
+            status: error.response?.status,
+            data: error.response?.data,
+            headers: error.response?.headers,
+          });
+
           setErrorMessage(
-            error.response.data.message ||
+            error.response?.data?.error ||
+              error.response?.data?.message ||
               "Registration failed. Please try again."
           );
         } else {
+          console.error("Unknown error during registration:", error);
           setErrorMessage("An unexpected error occurred. Please try again.");
         }
-
-        console.error("Error registering: ", error);
       }
     }
   };

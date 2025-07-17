@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"fmt"
+	"log"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -42,29 +43,62 @@ func RegisterHandler(c *gin.Context) {
 		return
 	}
 
-	file, _ := c.FormFile("pfp")
+	file, fileHeader, err := c.Request.FormFile("pfp")
 	var pfpURL string
-	if file != nil {
-		uploadPath := "./public/images/" + strings.ReplaceAll(uuid.New().String(), "-", "") + filepath.Ext(file.Filename)
-		err := c.SaveUploadedFile(file, uploadPath)
-		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failure in saving profile picture"})
-			return
-		}
-		// if uploaded, set the pfpURL to the path
-		pfpURL = "/images/" + filepath.Base(uploadPath)
+
+	// default profile picture path
+	defaultPfpPath := "/images/default_pfp.jpg"
+
+	// check if public/images/default_pfp.jpg exists
+	if _, err := os.Stat("./public/images/default_pfp.jpg"); os.IsNotExist(err) {
+		log.Printf("WARNING: Default profile picture not found at ./public/images/default_pfp.jpg")
 	} else {
-		pfpURL = "/images/default_pfp.jpg"
+		log.Printf("Default profile picture exists at ./public/images/default_pfp.jpg")
 	}
 
+	if err == nil && file != nil {
+		// ensure public/images directory exists
+		uploadDir := "./public/images"
+		if err := os.MkdirAll(uploadDir, 0755); err != nil {
+			fmt.Printf("Error creating directory %s: %v\n", uploadDir, err)
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create upload directory"})
+			return
+		}
+
+		// generate unique filename
+		filename := strings.ReplaceAll(uuid.New().String(), "-", "") + filepath.Ext(fileHeader.Filename)
+		uploadPath := filepath.Join(uploadDir, filename)
+
+		// save the file with proper error handling
+		if err := c.SaveUploadedFile(fileHeader, uploadPath); err != nil {
+			fmt.Printf("Error saving file to %s: %v\n", uploadPath, err)
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to save profile picture"})
+			return
+		}
+
+		pfpURL = "/images/" + filename
+		fmt.Printf("Successfully saved profile picture to %s\n", uploadPath)
+	} else {
+		pfpURL = defaultPfpPath
+		fmt.Printf("No profile picture uploaded, using default: %s\n", defaultPfpPath)
+	}
+
+	// Check if user with this email already exists
+	DB := db.GetDB()
+	q := queries.New(DB)
+
+	existingUser, err := q.GetUserByEmail(c, req.Email)
+	if err == nil && existingUser.ID != uuid.Nil {
+		c.JSON(http.StatusConflict, gin.H{"error": "A user with this email already exists"})
+		return
+	}
+
+	// Continue with normal registration flow
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failure in hashing password"})
 		return
 	}
-
-	DB := db.GetDB()
-	q := queries.New(DB)
 
 	userID := uuid.New()
 
@@ -77,6 +111,7 @@ func RegisterHandler(c *gin.Context) {
 	})
 
 	if err != nil {
+		fmt.Printf("Error creating user: %v\n", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failure in creating user"})
 		return
 	}
@@ -94,10 +129,6 @@ func RegisterHandler(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failure in creating analytics record"})
 		return
 	}
-
-	/*
-		XX end XX
-	*/
 
 	c.JSON(http.StatusCreated, gin.H{"message": "User registered successfully", "user": user})
 }
@@ -138,7 +169,7 @@ func LoginHandler(c *gin.Context) {
 		"expiry":  time.Now().Add(time.Hour * 72).Unix(),
 	})
 
-	// Sign the token with the secret
+	// sign the token with the secret
 	accessTokenStr, err := accessToken.SignedString([]byte(jwtSecret))
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failure in creating token"})
@@ -236,7 +267,13 @@ func ForgotPasswordHandler(c *gin.Context) {
 		return
 	}
 
-	resetURL := fmt.Sprintf("http://localhost:5173/auth/reset-password?token=%s", resetToken)
+	// update the URL to use the frontend URL from environment
+	frontendURL := os.Getenv("FRONTEND_URL")
+	if frontendURL == "" {
+		frontendURL = "https://rvif.me" // hardcoded for now
+	}
+
+	resetURL := fmt.Sprintf("%s/auth/reset-password?token=%s", frontendURL, resetToken)
 	emailBody := fmt.Sprintf("Click here to reset your password: %s", resetURL)
 
 	err = mailClient.SendEmail(req.Email, "Password Reset", emailBody)

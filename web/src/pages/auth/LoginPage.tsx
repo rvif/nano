@@ -19,7 +19,7 @@ import { useNavigate } from "react-router-dom";
 import { useAppDispatch } from "../../store/hooks";
 import { loginStart, loginSuccess } from "../../store/slices/authSlice";
 import api from "../../utils/api";
-import { EyeOpenIcon, EyeClosedIcon } from "@radix-ui/react-icons";
+
 import PasswordInput from "../../components/PasswordInput";
 
 const LoginPage = () => {
@@ -37,7 +37,6 @@ const LoginPage = () => {
   const [errorMessage, setErrorMessage] = useState("");
   const [formSubmitting, setFormSubmitting] = useState(false);
   const passwordInputRef = useRef<HTMLInputElement>(null);
-  const [showPassword, setShowPassword] = useState(false);
 
   useEffect(() => {
     // Try localStorage first, then fallback to sessionStorage
