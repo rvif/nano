@@ -74,6 +74,7 @@ func main() {
 			allowedOrigins,
 			"https://url-shortener-frontend-1218228353.asia-south1.run.app",
 			"https://url-shortener-frontend-1218228353.run.app",
+			"https://nano-khaki.vercel.app",
 		)
 	}
 
