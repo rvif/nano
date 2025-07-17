@@ -7,7 +7,7 @@ import { checkTokenExpiration, refreshAccessToken } from "./tokenRefresh";
 const api = axios.create({
   // The main issue was here - we need to modify how the base URL works
   baseURL: import.meta.env.PROD
-    ? "/api" // In production, use relative path with nginx proxy
+    ? import.meta.env.VITE_API_URL // In production, use relative path with nginx proxy
     : "/api/v1", // In development, use direct api/v1 path
   timeout: 30000, // Increased timeout for uploads
   maxRedirects: 0,
