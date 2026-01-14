@@ -33,6 +33,7 @@ func (m *Mailer) SendEmail(to, subject, body string) error {
 
 	dialer := gomail.NewDialer(m.SMTPHost, m.SMTPPort, m.Username, m.Password)
 	if err := dialer.DialAndSend(msg); err != nil {
+		log.Println("SMTP FAILED:", err)
 		return err
 	}
 
