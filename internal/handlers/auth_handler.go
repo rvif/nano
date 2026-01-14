@@ -278,6 +278,7 @@ func ForgotPasswordHandler(c *gin.Context) {
 
 	err = mailClient.SendEmail(req.Email, "Password Reset", emailBody)
 	if err != nil {
+
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failure in sending email"})
 		return
 	}
